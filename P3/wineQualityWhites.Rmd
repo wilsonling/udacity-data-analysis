@@ -1,0 +1,243 @@
+---
+title: "对白葡萄酒质量的探索"
+author: "凌伟森"
+date: "2018/9/15"
+output: html_document
+---
+
+```{r Load_The_Data, echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(corrplot)
+library(Hmisc)
+wine_quality <- read.csv('/Users/lingweisen/Desktop/R/project/wineQualityWhites.csv')
+wine_quality <- wine_quality[, -1]
+```
+
+# 单变量绘图选择
+
+```{r echo=FALSE, Univariate_Plots}
+dim(wine_quality)
+str(wine_quality)
+summary(wine_quality)
+```
+
+此数据集有12个变量，共4898条数据组成
+
+```{r echo=FALSE, message = FALSE, warning=FALSE}
+ggplot(aes(x = quality), data = wine_quality) +
+  geom_bar() +
+  scale_x_continuous(breaks = seq(3,9,1))
+```
+
+白葡萄酒的质量成正态分布，质量为6的数量最多
+
+```{r echo = FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(x = fixed.acidity), data = wine_quality) +
+  geom_histogram(binwidth = 0.1)
+ggplot(aes(x = volatile.acidity), data = wine_quality) +
+  geom_histogram(binwidth = 0.01)
+```
+
+固定酸度和游离酸度都呈正偏态分布。酸度是否与pH值有关？
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(x = citric.acid), data = wine_quality) +
+  geom_histogram(binwidth = 0.01)
+summary(wine_quality$citric.acid == 0)
+```
+
+有19份样本的柠檬酸含量为0。
+
+```{r echo=FALSE}
+ggplot(aes(x = residual.sugar), data = wine_quality) +
+  geom_histogram(binwidth = 0.1)
+summary(wine_quality$residual.sugar)
+ggplot(aes(x = chlorides), data = wine_quality) +
+  geom_histogram(binwidth = 0.001)
+summary(wine_quality$chlorides)
+```
+
+残留糖分大部分处于1g/dm^3^到5g/dm^3^之间，中位数5.2g/dm^3^，平均值6.391g/dm^3^。氯化物含量处于0.03g/dm^3^到0.07g/dm^3^区间的数量较多，中位数0.043g/dm^3^，平均值0.04577g/dm^3^
+
+```{r echo=FALSE}
+ggplot(aes(x = free.sulfur.dioxide), data = wine_quality) +
+  geom_histogram(binwidth = 1)
+summary(wine_quality$free.sulfur.dioxide)
+ggplot(aes(x = total.sulfur.dioxide), data = wine_quality) +
+  geom_histogram(binwidth= 1)
+summary(wine_quality$total.sulfur.dioxide)
+```
+
+游离SO2和SO2总量都是整数。多数白葡萄酒的游离SO2在20mg/dm^3^和50mg/dm^3^之间，中位数34mg/dm^3^，平均值35.31mg/dm^3^。多数白葡萄酒的SO2总量在100mg/dm^3^ 和160mg/dm^3^之间，中位数134mg/dm^3^，平均值134.8mg/dm^3^。
+
+```{r echo=FALSE}
+ggplot(aes(x = density), data = wine_quality) +
+  geom_histogram(binwidth=0.0001)
+```
+
+绝大部分白葡萄酒的密度在0.99g/cm^3^到1g/cm^3^之间，接近于水
+
+```{r echo=FALSE}
+ggplot(aes(x = pH), data = wine_quality) +
+  geom_histogram(binwidth = 0.01)
+```
+
+大多数白葡萄酒的pH值在3到4之间
+
+```{r echo=FALSE}
+ggplot(aes(x = sulphates), data = wine_quality) +
+  geom_histogram(binwidth = 0.01)
+```
+
+硫酸盐含量呈正态分布。
+
+```{r echo=FALSE}
+ggplot(aes(x = alcohol), data = wine_quality) +
+  geom_histogram(binwidth = 0.1)
+```
+
+大部分白葡萄酒的酒精度在9到12之间。
+
+# 单变量分析
+### 你的数据集的结构是什么？
+本数据集有4898份白葡萄酒样本组成，共有12个变量（包括：非挥发性酸度、挥发性酸度、柠檬酸、残糖、氯化物、游离二氧化硫、二氧化硫总量、密度、pH值、硫酸盐、酒精度、质量）
+
+### 你的数据集内感兴趣的主要特性有哪些？
+我对密度和酒精度与质量之间的关系比较感兴趣
+
+### 你认为数据集内哪些其他特征可以帮助你探索兴趣特点？
+残留糖属大分子结构，可能对密度会产生比较明显的影响
+
+### 根据数据集内已有变量，你是否创建了任何新变量？
+没有
+
+### 在已经探究的特性中，是否存在任何异常分布？你是否对数据进行一些操作，如清洁、调整或改变数据的形式？如果是，你为什么会这样做？
+没有
+
+
+# 双变量绘图选择
+```{r echo=FALSE, Bivariate_Plots}
+rcorr(as.matrix(wine_quality))
+corrplot(cor(wine_quality))
+```
+
+可以看出酒精度最可能对质量产生积极的影响
+
+```{r echo=FALSE}
+ggplot(aes(x = quality, y = alcohol, group = quality), data = wine_quality) +
+  geom_boxplot()
+```
+
+可以看出大部分质量高的葡萄酒其酒精度也高，质量为7~9的酒其酒精度均在10以上，酒精度的平均值为10.51
+
+```{r echo=FALSE}
+cor.test(x = wine_quality$quality, y = wine_quality$density)
+ggplot(aes(x = quality,y = density, group = quality), data = wine_quality) +
+  geom_boxplot()
+```
+
+密度与质量之间没有明显的相关关系，然而较高质量的就通常对应更低的密度
+
+```{r echo=FALSE}
+ggplot(aes(x = residual.sugar, y = density), data = wine_quality) +
+  geom_point(alpha = 1/20, position = 'jitter',color = 'orange') +
+  geom_line(stat = 'summary', fun.y = mean)
+```
+
+残留糖和密度有很强的正相关性
+
+# 双变量分析
+
+### 探讨你在这部分探究中观察到的一些关系。这些感兴趣的特性与数据集内其他特性有什么区别？
+质量的类型是整数型，值的范围在3到9之间的整数，其他变量的类型是数字型
+
+### 你是否观察到主要特性与其他特性之间的有趣关系？
+酒精度对质量产生最积极的影响，大部分酒精度高的酒其质量也高
+
+### 你发现最强的关系是什么？
+残留糖和密度有最强的相关性，残留糖含量越高，密度越大
+
+# 多变量绘图选择
+
+```{r echo=FALSE, warning=FALSE}
+ggplot(aes(x = alcohol,y = density, color = factor(quality)), data = wine_quality) +
+  geom_jitter() +
+  scale_color_brewer(palette = 'Blues') +
+  theme_dark() +
+  geom_smooth(method = 'lm', se = FALSE, size = 1) +
+  ylim(0.9875, 1.0025) +
+  labs(y = 'Density',x = 'Alcohol') +
+  ggtitle("density VS alcohol VS quality")
+```
+
+```{r echo=FALSE, warning=FALSE}
+ggplot(aes(x = alcohol,y = density, color = factor(quality)), data = wine_quality) +
+  geom_jitter(alpha = 0.2) +
+  scale_color_brewer(palette = 'Blues') +
+  theme_dark() +
+  geom_smooth(method = 'lm', se = FALSE, size = 1) +
+  ylim(0.9875, 1.0025) +
+  facet_wrap(~quality)
+```
+
+从图中可以看出对同一质量的酒，其密度与酒精度呈负相关。
+
+# 多变量分析
+
+###  探讨你在这部分探究中观察到的一些关系。通过观察感兴趣的特性，是否存在相互促进的特性？
+大部分情况下，对同一酒精度的酒，提高密度会提高质量；对同一密度下的酒，提高酒精度会提高质量
+
+### 这些特性之间是否存在有趣或惊人的联系呢？
+质量为3和质量为9的酒较其他质量的酒对比，密度和酒精度分布差异较大
+
+### 选项：你是否创建过数据集的任何模型？讨论你模型的优缺点。
+
+------
+
+# 定稿图与总结
+
+### 绘图一
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(x = quality), data = wine_quality) +
+  geom_bar() +
+  scale_x_continuous(breaks = seq(3,9,1)) +
+  labs(y = 'Count', x = 'Quality') +
+  ggtitle('The distribution of quality')
+  
+```
+
+### 描述一
+质量为3和9的数量最少，5-7的数量最多，质量层正态分布
+
+### 绘图二
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(x = quality, y = alcohol, group = quality), data = wine_quality) +
+  geom_boxplot() +
+  labs(y = 'Alcohol (% by Volume)', x = 'Quality') +
+  ggtitle('alcohol VS quality')
+```
+
+### 描述二
+质量高的酒通常有较高的酒精度
+
+### 绘图三
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(x = alcohol,y = density, color = factor(quality)), data = wine_quality) +
+  geom_point(position = position_jitter(h = 0)) +
+  scale_color_brewer(palette = 'Blues') +
+  theme_dark() +
+  geom_smooth(method = 'lm', se = FALSE, size = 1) +
+  ylim(0.9875, 1.0025) +
+  labs(y = 'Density (mg/l)',x = 'Alcohol (% by Volume)') +
+  ggtitle("density VS alcohol VS quality")
+```
+
+### 描述三
+从图中可以看出对同一质量的酒，其密度与酒精度呈负相关。
+
+------
+
+# 反思
+此数据集共包含4898条白葡萄酒数据，经过单变量、双变量和多变量分析探索后，发现密度和酒精度对质量的影响相比其他变量比较大，比较惊讶的是，pH值对质量的影响几乎没有，可能pH值要和残留糖放在一起考虑才能知道其对质量的影响，毕竟酸甜度的平衡也是影响质量的一大因素。
+在分析过程中，由于质量是定序变量，对r语言语法理解不深，导致在绘图时遇到一定困难，后通过网上查询才找到解决方法。
+对于本数据集，未来还可以探索酸度、残留糖和柠檬酸之间的关系，探索什么样的酸甜度的平衡会产生质量高的酒。
